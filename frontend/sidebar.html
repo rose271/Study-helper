@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vertical Sidebar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Caveat', cursive;
+        }
+
+        /* Sidebar container */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 60px; /* collapsed width */
+            background-color: #dbc2fa;
+            transition: width 0.3s;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+        }
+
+        /* Expanded sidebar */
+        .sidebar.expanded {
+            width: 200px;
+            align-items: flex-start;
+            padding-left: 20px;
+        }
+
+        .sidebar .toggle-btn {
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            margin-bottom: 30px;
+        }
+
+        .sidebar .nav-item {
+            width: 100%;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+            transition: background 0.2s;
+            padding: 8px 12px;
+            border-radius: 10px;
+        }
+
+        .sidebar .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar .nav-item i {
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .sidebar .nav-item span {
+            display: none; /* hide text when collapsed */
+            margin-left: 10px;
+        }
+
+        .sidebar.expanded .nav-item span {
+            display: inline; /* show text when expanded */
+        }
+
+        /* Content to push aside */
+        .main-content {
+            margin-left: 60px;
+            transition: margin-left 0.3s;
+            padding: 20px;
+        }
+
+        .main-content.expanded {
+            margin-left: 200px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar" id="sidebar">
+    <div class="toggle-btn" id="toggleBtn">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <a href="index.html" class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+    </a>
+
+    <a href="folders.html" class="nav-item">
+        <i class="fas fa-folder"></i>
+        <span>Folders</span>
+    </a>
+</div>
+
+
+
+<script>
+    const toggleBtn = document.getElementById('toggleBtn');
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+
+    toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('expanded');
+        mainContent.classList.toggle('expanded');
+    });
+</script>
+
+</body>
+</html>
