@@ -1,96 +1,140 @@
-// Reference to the folder being edited
-let currentCard;
+// ─── Folder Storage Helpers ───────────────────────────────────────────────────
 
-// Create folder dynamically
-document.getElementById("folderForm").addEventListener("submit", function(e){
-    e.preventDefault();
+function getFolders() {
+    return JSON.parse(localStorage.getItem('folders') || '[]');
+}
 
-    let name = document.getElementById("folderName").value;
-    let description = document.getElementById("folderDescription").value;
+function saveFolders(folders) {
+    localStorage.setItem('folders', JSON.stringify(folders));
+}
 
-    // Create new card HTML with Edit button
-    let newCard = document.createElement("div");
-    newCard.classList.add("col-md-4", "mt-4");
-    newCard.innerHTML = `
-        <div class="card course-card">
-            <div class="card-body">
-                <h5 class="card-title">${name}</h5>
-                <p class="card-text">${description}</p>
-                <a href="#" class="btn custom-btn">Course elements</a>
-                <button class="btn edit-btn" data-bs-toggle="modal" data-bs-target="#editFolderModal">Edit</button>
+function generateId() {
+    return 'folder_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// ─── Render All Folders ────────────────────────────────────────────────────────
+
+function renderFolders(folderList) {
+    const row = document.getElementById("folderCardsRow");
+    row.innerHTML = '';
+
+    folderList.forEach(folder => {
+        const col = document.createElement("div");
+        col.classList.add("col-md-4", "mt-4");
+        col.dataset.folderId = folder.id;
+        col.innerHTML = `
+            <div class="card course-card">
+                <div class="card-body">
+                    <h5 class="card-title">${folder.name}</h5>
+                    <p class="card-text">${folder.description}</p>
+                    <a href="folder.html?id=${folder.id}" class="btn custom-btn">Course elements</a>
+                    <button class="btn edit-btn"
+                        data-bs-toggle="modal"
+                        data-bs-target="#editFolderModal"
+                        data-folder-id="${folder.id}">Edit</button>
+                </div>
             </div>
-        </div>
-    `;
+        `;
 
-    // Append card to folder row
-    document.getElementById("folderCardsRow").appendChild(newCard);
+        col.querySelector(".edit-btn").addEventListener("click", function () {
+            const folderId = this.dataset.folderId;
+            const folders = getFolders();
+            const folder = folders.find(f => f.id === folderId);
+            if (!folder) return;
+            document.getElementById("editFolderName").value = folder.name;
+            document.getElementById("editFolderDescription").value = folder.description;
+            document.getElementById("editFolderModal").dataset.editingId = folderId;
+        });
 
-    // Add click listener to the edit button
-    newCard.querySelector(".edit-btn").addEventListener("click", function(){
-        currentCard = this.closest(".card"); // store card being edited
-        document.getElementById("editFolderName").value = currentCard.querySelector(".card-title").innerText;
-        document.getElementById("editFolderDescription").value = currentCard.querySelector(".card-text").innerText;
+        row.appendChild(col);
     });
+}
 
-    // Close modal
-    var modal = bootstrap.Modal.getInstance(document.getElementById('createFolderModal'));
-    modal.hide();
+// ─── Initial Render ────────────────────────────────────────────────────────────
 
-    // Reset form
-    document.getElementById("folderForm").reset();
-});
+renderFolders(getFolders());
 
-// Edit Folder Modal submit
-document.getElementById("editFolderForm").addEventListener("submit", function(e){
+// ─── Create Folder ─────────────────────────────────────────────────────────────
+
+document.getElementById("folderForm").addEventListener("submit", function (e) {
     e.preventDefault();
-    if (!currentCard) return;
 
-    currentCard.querySelector(".card-title").innerText = document.getElementById("editFolderName").value;
-    currentCard.querySelector(".card-text").innerText = document.getElementById("editFolderDescription").value;
+    const name = document.getElementById("folderName").value.trim();
+    const description = document.getElementById("folderDescription").value.trim();
 
-    // Close modal
-    var modal = bootstrap.Modal.getInstance(document.getElementById('editFolderModal'));
-    modal.hide();
+    const newFolder = { id: generateId(), name, description };
+    const folders = getFolders();
+    folders.push(newFolder);
+    saveFolders(folders);
+    renderFolders(folders);
+
+    bootstrap.Modal.getInstance(document.getElementById('createFolderModal')).hide();
+    this.reset();
 });
 
+// ─── Edit Folder ───────────────────────────────────────────────────────────────
 
-// Generate 7x52 = 364 days (approx 1 year)
+document.getElementById("editFolderForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const folderId = document.getElementById("editFolderModal").dataset.editingId;
+    if (!folderId) return;
+
+    const folders = getFolders();
+    const folder = folders.find(f => f.id === folderId);
+    if (!folder) return;
+
+    folder.name = document.getElementById("editFolderName").value.trim();
+    folder.description = document.getElementById("editFolderDescription").value.trim();
+    saveFolders(folders);
+    renderFolders(folders);
+
+    bootstrap.Modal.getInstance(document.getElementById('editFolderModal')).hide();
+});
+
+// ─── Search ────────────────────────────────────────────────────────────────────
+
+document.getElementById("search_button").addEventListener("input", function () {
+    const query = this.value.toLowerCase();
+    const folders = getFolders().filter(f =>
+        f.name.toLowerCase().includes(query) || f.description.toLowerCase().includes(query)
+    );
+    renderFolders(folders);
+});
+
+// ─── Activity Calendar ─────────────────────────────────────────────────────────
+
 const calendar = document.getElementById('calendar');
 const weeksInYear = 52;
 const daysInWeek = 7;
 
-// Create the grid
 for (let w = 0; w < weeksInYear; w++) {
-  const weekDiv = document.createElement('div');
-  weekDiv.className = 'week';
-  
-  for (let d = 0; d < daysInWeek; d++) {
-    const dayDiv = document.createElement('div');
-    dayDiv.className = 'day';
+    const weekDiv = document.createElement('div');
+    weekDiv.className = 'week';
 
-    // Toggle active class on click
-    dayDiv.addEventListener('click', () => {
-      dayDiv.classList.toggle('active');
-    });
+    for (let d = 0; d < daysInWeek; d++) {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'day';
+        dayDiv.addEventListener('click', () => dayDiv.classList.toggle('active'));
+        weekDiv.appendChild(dayDiv);
+    }
 
-    weekDiv.appendChild(dayDiv);
-  }
-
-  calendar.appendChild(weekDiv);
+    calendar.appendChild(weekDiv);
 }
 
-    // Load sidebar HTML into the page
-   fetch('sidebar.html')
+// ─── Sidebar ───────────────────────────────────────────────────────────────────
+
+fetch('sidebar.html')
     .then(response => response.text())
     .then(data => {
         document.getElementById('sidebar-container').innerHTML = data;
 
         const toggleBtn = document.getElementById('toggleBtn');
         const sidebar = document.getElementById('sidebar');
-        const mainContent = document.querySelector('.main-content-wrapper'); // select wrapper
+        const mainContent = document.querySelector('.main-content-wrapper');
 
         toggleBtn.addEventListener('click', () => {
             sidebar.classList.toggle('expanded');
-            mainContent.classList.toggle('expanded'); // now shifts main content
+            mainContent.classList.toggle('expanded');
         });
     });

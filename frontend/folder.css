@@ -1,0 +1,316 @@
+
+* {
+    box-sizing: border-box;
+    font-family: 'Caveat', cursive;
+}
+
+
+body {
+    margin: 0;
+    background-color: #f7f4ff;
+}
+
+/* ─── Layout ─────────────────────────────────────────── */
+
+.folder-content-wrapper {
+    margin-left: 60px;
+    padding: 40px;
+    transition: margin-left 0.3s ease;
+}
+
+.folder-content-wrapper.expanded {
+    margin-left: 200px;
+}
+
+/* ─── Header ─────────────────────────────────────────── */
+
+.folder-header {
+    margin-bottom: 36px;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #5800c3;
+    font-size: 18px;
+    text-decoration: none;
+    margin-bottom: 16px;
+    transition: gap 0.2s ease;
+}
+
+.back-btn:hover {
+    gap: 14px;
+    color: #6d1cff;
+}
+
+.folder-title-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.folder-icon {
+    font-size: 38px;
+    color: #5800c3;
+}
+
+.folder-title-group h2 {
+    font-size: 36px;
+    font-weight: 700;
+    color: #2d004f;
+    margin: 0;
+}
+
+.folder-desc {
+    font-size: 18px;
+    color: #777;
+    margin-top: 6px;
+    margin-left: 52px;
+}
+
+/* ─── Upload Section ─────────────────────────────────── */
+
+.upload-section {
+    margin-bottom: 40px;
+}
+
+.upload-dropzone {
+    border: 2.5px dashed #c49ef5;
+    border-radius: 18px;
+    padding: 40px 20px;
+    text-align: center;
+    background: #fff;
+    transition: border-color 0.3s, background 0.3s, transform 0.2s;
+    cursor: pointer;
+}
+
+.upload-dropzone.drag-over {
+    border-color: #5800c3;
+    background: #f0e8ff;
+    transform: scale(1.01);
+}
+
+.upload-icon {
+    font-size: 44px;
+    color: #c49ef5;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.upload-text {
+    font-size: 22px;
+    color: #5800c3;
+    margin: 0 0 4px;
+    font-weight: 600;
+}
+
+.upload-subtext {
+    font-size: 16px;
+    color: #aaa;
+    margin: 0 0 20px;
+}
+
+.upload-btn {
+    display: inline-block;
+    background-color: #5800c3;
+    color: white;
+    font-family: 'Caveat', cursive;
+    font-size: 18px;
+    padding: 10px 28px;
+    border-radius: 25px;
+    cursor: pointer;
+    border: none;
+    transition: background 0.3s, transform 0.2s;
+    box-shadow: 0 6px 18px rgba(88, 0, 195, 0.25);
+}
+
+.upload-btn:hover {
+    background-color: #6d1cff;
+    transform: translateY(-2px);
+}
+
+/* ─── Files Section ──────────────────────────────────── */
+
+.section-title {
+    font-size: 26px;
+    color: #2d004f;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.files-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+.empty-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: #bbb;
+    font-size: 20px;
+    font-family: 'Caveat', cursive;
+    gap: 12px;
+}
+
+.empty-state i {
+    font-size: 52px;
+    color: #ddd;
+}
+
+.empty-state.visible {
+    display: flex;
+}
+
+/* ─── File Card ──────────────────────────────────────── */
+
+.file-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.25s, box-shadow 0.25s;
+    cursor: pointer;
+    position: relative;
+}
+
+.file-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 14px 30px rgba(88, 0, 195, 0.15);
+}
+
+.file-thumbnail {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    display: block;
+    background: #f0e8ff;
+}
+
+.file-pdf-thumb {
+    width: 100%;
+    height: 130px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f0e8ff, #e0d0fa);
+    font-size: 50px;
+    color: #5800c3;
+}
+
+.file-info {
+    padding: 10px 12px;
+}
+
+.file-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #2d004f;
+    font-family: 'Caveat', cursive;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-size {
+    font-size: 13px;
+    color: #aaa;
+    margin-top: 2px;
+    font-family: 'Caveat', cursive;
+}
+
+.file-delete {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 26px;
+    height: 26px;
+    background: rgba(255,255,255,0.9);
+    border: none;
+    border-radius: 50%;
+    font-size: 13px;
+    color: #e53935;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 2;
+}
+
+.file-card:hover .file-delete {
+    opacity: 1;
+}
+
+/* ─── Preview Modal ──────────────────────────────────── */
+
+.preview-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+
+.preview-overlay.active {
+    display: flex;
+}
+
+.preview-box {
+    background: #fff;
+    border-radius: 18px;
+    padding: 20px;
+    max-width: 85vw;
+    max-height: 85vh;
+    overflow: auto;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.preview-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: #f0e8ff;
+    border: none;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+    color: #5800c3;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    z-index: 1;
+}
+
+.preview-close:hover {
+    background: #dbc2fa;
+}
+
+.preview-body img {
+    max-width: 70vw;
+    max-height: 70vh;
+    border-radius: 10px;
+    display: block;
+}
+
+.preview-body iframe {
+    width: 70vw;
+    height: 70vh;
+    border: none;
+    border-radius: 10px;
+}

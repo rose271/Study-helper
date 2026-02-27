@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Folder Contents</title>
+    <link rel="stylesheet" href="folder.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+</head>
+<body>
+
+    <div id="sidebar-container"></div>
+
+    <div class="folder-content-wrapper">
+
+        <!-- Header -->
+        <div class="folder-header">
+            <a href="mainpage.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            <div class="folder-title-group">
+                <i class="fas fa-folder-open folder-icon"></i>
+                <h2 id="folderTitle">Loading...</h2>
+            </div>
+            <p id="folderDesc" class="folder-desc"></p>
+        </div>
+
+        <!-- Upload Area -->
+        <div class="upload-section">
+            <div class="upload-dropzone" id="dropzone">
+                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                <p class="upload-text">Drag & drop files here</p>
+                <p class="upload-subtext">Supports PDF, JPG, PNG, GIF</p>
+                <label class="upload-btn" for="fileInput">
+                    <i class="fas fa-plus"></i> Choose Files
+                </label>
+                <input type="file" id="fileInput" multiple accept=".pdf,image/*" hidden>
+            </div>
+        </div>
+
+        <!-- Files Grid -->
+        <div class="files-section">
+            <h3 class="section-title" id="filesTitle">Files</h3>
+            <div class="files-grid" id="filesGrid">
+                <!-- Files rendered here -->
+            </div>
+            <div class="empty-state" id="emptyState">
+                <i class="fas fa-folder-open"></i>
+                <p>This folder is empty. Upload some files to get started!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="preview-overlay" id="previewOverlay">
+        <div class="preview-box">
+            <button class="preview-close" id="previewClose"><i class="fas fa-times"></i></button>
+            <div class="preview-body" id="previewBody"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="folder.js"></script>
+</body>
+</html>
