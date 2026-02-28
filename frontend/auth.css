@@ -92,7 +92,8 @@ body::after {
   width: 260px;
   height: 260px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--paper);
+  color: #3f038d;
   opacity: 0.15;
 }
 
@@ -337,7 +338,6 @@ input:focus {
   width: 100%;
   height: 50px;
   background: var(--ink);
-  color: #fff;
   border: 2px solid var(--ink);
   font-size: 13px;
   font-weight: 500;
@@ -347,24 +347,22 @@ input:focus {
   position: relative;
   overflow: hidden;
   transition: background 0.25s, color 0.25s;
+  color: #fff
 }
 
-.submit-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--accent);
-  transform: translateX(-100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.submit-btn:hover{
+   background:var(--panel);
+   color: #3f038d;
 }
-
 .submit-btn:hover::before {
   transform: translateX(0);
 }
 
+
 .submit-btn span {
   position: relative;
   z-index: 1;
+
 }
 
 /* ─── Divider ─── */
