@@ -1,149 +1,103 @@
-// ─── Folder Info Helpers (localStorage — small data only) ─────────────────────
-
-function getFolders() {
-    return JSON.parse(localStorage.getItem('folders') || '[]');
-}
-
-function formatSize(bytes) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-}
-
-// ─── Load Folder Info ──────────────────────────────────────────────────────────
-
-const params = new URLSearchParams(window.location.search);
+const params   = new URLSearchParams(window.location.search);
 const folderId = params.get('id');
+const user_id  = localStorage.getItem('user_id');
+const API      = 'http://127.0.0.1:8000';
 
+// ─── Guard ────────────────────────────────────────────────────────────────────
 if (!folderId) window.location.href = 'mainpage.html';
 
-const folders = getFolders();
-const folder = folders.find(f => f.id === folderId);
-
-if (!folder) {
-    window.location.href = 'mainpage.html';
-} else {
-    document.getElementById('folderTitle').textContent = folder.name;
-    document.getElementById('folderDesc').textContent = folder.description;
-    document.title = folder.name;
+if (!user_id) {
+    alert('Please login first!');
+    window.location.href = 'authantication.html';
 }
 
-// ─── IndexedDB Setup ───────────────────────────────────────────────────────────
 
-const DB_NAME = 'FolderFilesDB';
-const DB_VERSION = 1;
-const STORE_NAME = 'files';
-let db;
-
-function openDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-        request.onupgradeneeded = (e) => {
-            const database = e.target.result;
-            if (!database.objectStoreNames.contains(STORE_NAME)) {
-                const store = database.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-                store.createIndex('folderId', 'folderId', { unique: false });
-            }
-        };
-
-        request.onsuccess = (e) => resolve(e.target.result);
-        request.onerror = (e) => reject(e.target.error);
-    });
-}
-
-function getFilesForFolder(folderId) {
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readonly');
-        const store = tx.objectStore(STORE_NAME);
-        const index = store.index('folderId');
-        const request = index.getAll(folderId);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-    });
-}
-
-function saveFileToDB(fileRecord) {
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        const request = store.add(fileRecord);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-    });
-}
-
-function deleteFileFromDB(fileId) {
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        const request = store.delete(fileId);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-    });
-}
-
-// ─── Render Files ──────────────────────────────────────────────────────────────
-
-async function renderFiles() {
-    const grid = document.getElementById('filesGrid');
-    const empty = document.getElementById('emptyState');
-    const files = await getFilesForFolder(folderId);
-
-    grid.innerHTML = '';
-
-    if (files.length === 0) {
-        empty.classList.add('visible');
-        return;
+// ─── Load Folder Info from Database ──────────────────────────────────────────
+async function loadFolderInfo() {
+    try {
+        const response = await fetch(`${API}/folder/info/${folderId}`);
+        const folder   = await response.json();
+        document.getElementById('folderTitle').textContent = folder.folder_name;
+        document.getElementById('folderDesc').textContent  = folder.folder_des;
+        document.title = folder.folder_name;
+    } catch (error) {
+        console.error('Failed to load folder info:', error);
     }
-
-    empty.classList.remove('visible');
-
-    files.forEach(file => {
-        const isImage = file.type.startsWith('image/');
-        const url = URL.createObjectURL(new Blob([file.data], { type: file.type }));
-
-        const card = document.createElement('div');
-        card.className = 'file-card';
-        card.innerHTML = `
-            ${isImage
-                ? `<img class="file-thumbnail" src="${url}" alt="${file.name}">`
-                : `<div class="file-pdf-thumb"><i class="fas fa-file-pdf"></i></div>`
-            }
-            <div class="file-info">
-                <div class="file-name" title="${file.name}">${file.name}</div>
-                <div class="file-size">${formatSize(file.size)}</div>
-            </div>
-            <button class="file-delete" title="Delete file"><i class="fas fa-trash"></i></button>
-        `;
-
-        card.addEventListener('click', (e) => {
-            if (e.target.closest('.file-delete')) return;
-            openPreview(file);
-        });
-
-        card.querySelector('.file-delete').addEventListener('click', async (e) => {
-            e.stopPropagation();
-            await deleteFileFromDB(file.id);
-            renderFiles();
-        });
-
-        grid.appendChild(card);
-    });
 }
 
-// ─── Preview ───────────────────────────────────────────────────────────────────
+loadFolderInfo();
 
+// ─── Render Files from Database ───────────────────────────────────────────────
+async function renderFiles() {
+    const grid  = document.getElementById('filesGrid');
+    const empty = document.getElementById('emptyState');
+
+    try {
+        const response = await fetch(`${API}/contents/${folderId}`);
+        const files    = await response.json();
+
+        grid.innerHTML = '';
+
+        if (files.length === 0) {
+            empty.classList.add('visible');
+            return;
+        }
+
+        empty.classList.remove('visible');
+
+        files.forEach(file => {
+            const isImage = file.content_name.match(/\.(jpg|jpeg|png|gif)$/i);
+
+            const card = document.createElement('div');
+            card.className = 'file-card';
+            card.innerHTML = `
+                ${isImage
+                    ? `<img class="file-thumbnail" src="${API}/${file.content_path}" alt="${file.content_name}">`
+                    : `<div class="file-pdf-thumb"><i class="fas fa-file-pdf"></i></div>`
+                }
+                <div class="file-info">
+                    <div class="file-name" title="${file.content_name}">${file.content_name}</div>
+                </div>
+                <button class="file-delete" data-id="${file.content_id}" title="Delete file">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+
+            // Preview on click
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.file-delete')) return;
+                openPreview(file);
+            });
+
+            // Delete file
+            card.querySelector('.file-delete').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const content_id = e.currentTarget.dataset.id;
+                await fetch(`${API}/contents/${content_id}`, { method: 'DELETE' });
+                renderFiles();
+            });
+
+            grid.appendChild(card);
+        });
+
+    } catch (error) {
+        console.error('Failed to load files:', error);
+    }
+}
+
+renderFiles();
+
+// ─── Preview ──────────────────────────────────────────────────────────────────
 function openPreview(file) {
-    const overlay = document.getElementById('previewOverlay');
-    const body = document.getElementById('previewBody');
-    const isImage = file.type.startsWith('image/');
-    const url = URL.createObjectURL(new Blob([file.data], { type: file.type }));
+    const overlay  = document.getElementById('previewOverlay');
+    const body     = document.getElementById('previewBody');
+    const isImage  = file.content_name.match(/\.(jpg|jpeg|png|gif)$/i);
+    const fileUrl  = `${API}/${file.content_path}`;
 
     if (isImage) {
-        body.innerHTML = `<img src="${url}" alt="${file.name}">`;
+        body.innerHTML = `<img src="${fileUrl}" alt="${file.content_name}">`;
     } else {
-        body.innerHTML = `<iframe src="${url}"></iframe>`;
+        body.innerHTML = `<iframe src="${fileUrl}"></iframe>`;
     }
 
     overlay.classList.add('active');
@@ -160,20 +114,27 @@ document.getElementById('previewOverlay').addEventListener('click', (e) => {
     }
 });
 
-// ─── File Upload ───────────────────────────────────────────────────────────────
-
+// ─── File Upload to Database ──────────────────────────────────────────────────
 async function handleFiles(fileList) {
     showUploadProgress(true);
 
     for (const file of Array.from(fileList)) {
-        const arrayBuffer = await file.arrayBuffer();
-        await saveFileToDB({
-            folderId,
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            data: arrayBuffer
-        });
+        const formData = new FormData();
+        formData.append('file', file);  // content_name taken from file.filename automatically
+
+        try {
+            const response = await fetch(`${API}/contents/${user_id}/${folderId}`, {
+                method: 'POST',
+                body:   formData
+            });
+
+            if (!response.ok) {
+                alert(`Failed to upload ${file.name}`);
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('Could not connect to server. Make sure FastAPI is running.');
+        }
     }
 
     showUploadProgress(false);
@@ -182,14 +143,14 @@ async function handleFiles(fileList) {
 
 function showUploadProgress(loading) {
     const btn = document.querySelector('.upload-btn');
-    const dz = document.getElementById('dropzone');
+    const dz  = document.getElementById('dropzone');
     if (loading) {
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-        dz.style.opacity = '0.7';
+        btn.innerHTML       = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        dz.style.opacity    = '0.7';
         dz.style.pointerEvents = 'none';
     } else {
-        btn.innerHTML = '<i class="fas fa-plus"></i> Choose Files';
-        dz.style.opacity = '1';
+        btn.innerHTML       = '<i class="fas fa-plus"></i> Choose Files';
+        dz.style.opacity    = '1';
         dz.style.pointerEvents = 'auto';
     }
 }
@@ -199,8 +160,7 @@ document.getElementById('fileInput').addEventListener('change', function () {
     this.value = '';
 });
 
-// ─── Drag & Drop ───────────────────────────────────────────────────────────────
-
+// ─── Drag & Drop ──────────────────────────────────────────────────────────────
 const dropzone = document.getElementById('dropzone');
 
 dropzone.addEventListener('dragover', (e) => {
@@ -216,28 +176,25 @@ dropzone.addEventListener('drop', (e) => {
     if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
 });
 
-// ─── Sidebar ───────────────────────────────────────────────────────────────────
-
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
 fetch('sidebar.html')
     .then(r => r.text())
     .then(data => {
         document.getElementById('sidebar-container').innerHTML = data;
 
-        const toggleBtn = document.getElementById('toggleBtn');
-        const sidebar = document.getElementById('sidebar');
+        const toggleBtn   = document.getElementById('toggleBtn');
+        const sidebar     = document.getElementById('sidebar');
         const mainContent = document.querySelector('.folder-content-wrapper');
 
+        // Toggle sidebar
         toggleBtn.addEventListener('click', () => {
             sidebar.classList.toggle('expanded');
             mainContent.classList.toggle('expanded');
         });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = 'authantication.html';
+        });
     });
-
-// ─── Init ──────────────────────────────────────────────────────────────────────
-
-openDB().then(database => {
-    db = database;
-    renderFiles();
-}).catch(err => {
-    console.error('IndexedDB failed to open:', err);
-});
