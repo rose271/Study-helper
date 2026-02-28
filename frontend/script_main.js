@@ -1,19 +1,7 @@
-// ─── Folder Storage Helpers ───────────────────────────────────────────────────
+const user_id = localStorage.getItem('user_id');
+const API = 'http://127.0.0.1:8000';
 
-function getFolders() {
-    return JSON.parse(localStorage.getItem('folders') || '[]');
-}
-
-function saveFolders(folders) {
-    localStorage.setItem('folders', JSON.stringify(folders));
-}
-
-function generateId() {
-    return 'folder_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-}
-
-// ─── Render All Folders ────────────────────────────────────────────────────────
-
+// ─── Render All Folders ───────────────────────────────────────────────────────
 function renderFolders(folderList) {
     const row = document.getElementById("folderCardsRow");
     row.innerHTML = '';
@@ -21,120 +9,134 @@ function renderFolders(folderList) {
     folderList.forEach(folder => {
         const col = document.createElement("div");
         col.classList.add("col-md-4", "mt-4");
-        col.dataset.folderId = folder.id;
         col.innerHTML = `
             <div class="card course-card">
                 <div class="card-body">
-                    <h5 class="card-title">${folder.name}</h5>
-                    <p class="card-text">${folder.description}</p>
-                    <a href="folder.html?id=${folder.id}" class="btn custom-btn">Course elements</a>
+                    <h5 class="card-title">${folder.folder_name}</h5>
+                    <p class="card-text">${folder.folder_des}</p>
+                    <a href="folder.html?id=${folder.folder_id}" class="btn custom-btn">Course elements</a>
                     <button class="btn edit-btn"
                         data-bs-toggle="modal"
                         data-bs-target="#editFolderModal"
-                        data-folder-id="${folder.id}">Edit</button>
+                        data-folder-id="${folder.folder_id}"
+                        data-folder-name="${folder.folder_name}"
+                        data-folder-des="${folder.folder_des}">Edit</button>
                 </div>
             </div>
         `;
 
         col.querySelector(".edit-btn").addEventListener("click", function () {
-            const folderId = this.dataset.folderId;
-            const folders = getFolders();
-            const folder = folders.find(f => f.id === folderId);
-            if (!folder) return;
-            document.getElementById("editFolderName").value = folder.name;
-            document.getElementById("editFolderDescription").value = folder.description;
-            document.getElementById("editFolderModal").dataset.editingId = folderId;
+            document.getElementById("editFolderName").value        = this.dataset.folderName;
+            document.getElementById("editFolderDescription").value = this.dataset.folderDes;
+            document.getElementById("editFolderModal").dataset.editingId = this.dataset.folderId;
         });
 
         row.appendChild(col);
     });
 }
 
-// ─── Initial Render ────────────────────────────────────────────────────────────
+// ─── Fetch Folders from Database ──────────────────────────────────────────────
+async function loadFolders() {
+    const response = await fetch(`${API}/folders/${user_id}`);
+    const folders  = await response.json();
+    renderFolders(folders);
+}
 
-renderFolders(getFolders());
+loadFolders();
 
-// ─── Create Folder ─────────────────────────────────────────────────────────────
-
-document.getElementById("folderForm").addEventListener("submit", function (e) {
+// ─── Create Folder ────────────────────────────────────────────────────────────
+document.getElementById("folderForm").addEventListener("submit", async function (e) {
     e.preventDefault();
 
-    const name = document.getElementById("folderName").value.trim();
-    const description = document.getElementById("folderDescription").value.trim();
+    const folder_name = document.getElementById("folderName").value.trim();
+    const folder_des  = document.getElementById("folderDescription").value.trim();
 
-    const newFolder = { id: generateId(), name, description };
-    const folders = getFolders();
-    folders.push(newFolder);
-    saveFolders(folders);
-    renderFolders(folders);
+    const response = await fetch(`${API}/folders/${user_id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder_name, folder_des })
+    });
 
-    bootstrap.Modal.getInstance(document.getElementById('createFolderModal')).hide();
-    this.reset();
+    if (response.ok) {
+        loadFolders();
+        bootstrap.Modal.getInstance(document.getElementById('createFolderModal')).hide();
+        this.reset();
+    } else {
+        alert('Failed to create folder.');
+    }
 });
 
-// ─── Edit Folder ───────────────────────────────────────────────────────────────
-
-document.getElementById("editFolderForm").addEventListener("submit", function (e) {
+// ─── Edit Folder ──────────────────────────────────────────────────────────────
+document.getElementById("editFolderForm").addEventListener("submit", async function (e) {
     e.preventDefault();
 
-    const folderId = document.getElementById("editFolderModal").dataset.editingId;
-    if (!folderId) return;
+    const folder_id   = document.getElementById("editFolderModal").dataset.editingId;
+    const folder_name = document.getElementById("editFolderName").value.trim();
+    const folder_des  = document.getElementById("editFolderDescription").value.trim();
 
-    const folders = getFolders();
-    const folder = folders.find(f => f.id === folderId);
-    if (!folder) return;
+    const response = await fetch(`${API}/folder/${folder_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder_name, folder_des })
+    });
 
-    folder.name = document.getElementById("editFolderName").value.trim();
-    folder.description = document.getElementById("editFolderDescription").value.trim();
-    saveFolders(folders);
-    renderFolders(folders);
-
-    bootstrap.Modal.getInstance(document.getElementById('editFolderModal')).hide();
+    if (response.ok) {
+        loadFolders();
+        bootstrap.Modal.getInstance(document.getElementById('editFolderModal')).hide();
+    } else {
+        alert('Failed to update folder.');
+    }
 });
 
-// ─── Search ────────────────────────────────────────────────────────────────────
-
-document.getElementById("search_button").addEventListener("input", function () {
-    const query = this.value.toLowerCase();
-    const folders = getFolders().filter(f =>
-        f.name.toLowerCase().includes(query) || f.description.toLowerCase().includes(query)
+// ─── Search ───────────────────────────────────────────────────────────────────
+document.getElementById("search_button").addEventListener("input", async function () {
+    const query    = this.value.toLowerCase();
+    const response = await fetch(`${API}/folders/${user_id}`);
+    const folders  = await response.json();
+    const filtered = folders.filter(f =>
+        f.folder_name.toLowerCase().includes(query) ||
+        f.folder_des.toLowerCase().includes(query)
     );
-    renderFolders(folders);
+    renderFolders(filtered);
 });
 
-// ─── Activity Calendar ─────────────────────────────────────────────────────────
-
-const calendar = document.getElementById('calendar');
-const weeksInYear = 52;
-const daysInWeek = 7;
+// ─── Activity Calendar ────────────────────────────────────────────────────────
+const calendar     = document.getElementById('calendar');
+const weeksInYear  = 52;
+const daysInWeek   = 7;
 
 for (let w = 0; w < weeksInYear; w++) {
     const weekDiv = document.createElement('div');
     weekDiv.className = 'week';
-
     for (let d = 0; d < daysInWeek; d++) {
         const dayDiv = document.createElement('div');
         dayDiv.className = 'day';
         dayDiv.addEventListener('click', () => dayDiv.classList.toggle('active'));
         weekDiv.appendChild(dayDiv);
     }
-
     calendar.appendChild(weekDiv);
 }
 
-// ─── Sidebar ───────────────────────────────────────────────────────────────────
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-fetch('sidebar.html')
-    .then(response => response.text())
+    fetch('sidebar.html')
+    .then(r => r.text())
     .then(data => {
         document.getElementById('sidebar-container').innerHTML = data;
 
-        const toggleBtn = document.getElementById('toggleBtn');
-        const sidebar = document.getElementById('sidebar');
+        const toggleBtn   = document.getElementById('toggleBtn');
+        const sidebar     = document.getElementById('sidebar');
         const mainContent = document.querySelector('.main-content-wrapper');
 
+        // Toggle sidebar
         toggleBtn.addEventListener('click', () => {
             sidebar.classList.toggle('expanded');
             mainContent.classList.toggle('expanded');
+        });
+
+        // Logout  ← add this here
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = 'authantication.html';
         });
     });
